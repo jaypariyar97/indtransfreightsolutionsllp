@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "Bhc-HVeWddRgJsVNdR_49"
+uri = "file://indtrans-app.zip"
+type = "unspecified"
+title = "Indtrans Freight Solutions — Source ZIP"

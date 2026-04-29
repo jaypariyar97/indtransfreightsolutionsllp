@@ -1,0 +1,34 @@
+{
+  "folders": [
+    {
+      "path": "backend",
+      "name": "Backend (Spring Boot)"
+    },
+    {
+      "path": "frontend",
+      "name": "Frontend (React)"
+    },
+    {
+      "path": "docker",
+      "name": "Docker Config"
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/target": true,
+      "**/dist": true
+    },
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.server.launchMode": "Standard"
+  },
+  "extensions": {
+    "recommendations": [
+      "vmware.vscode-spring-boot",
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss"
+    ]
+  }
+}

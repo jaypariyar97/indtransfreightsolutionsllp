@@ -1,0 +1,81 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: indtrans-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: "${POSTGRES_DB:-indtrans}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-change_me}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-indtrans}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - indtrans-net
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: indtrans-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/${POSTGRES_DB:-indtrans}"
+      SPRING_DATASOURCE_USERNAME: "${POSTGRES_USER:-postgres}"
+      SPRING_DATASOURCE_PASSWORD: "${POSTGRES_PASSWORD:-change_me}"
+      SPRING_DATASOURCE_DRIVER: "org.postgresql.Driver"
+      SERVER_SERVLET_CONTEXT_PATH: "/"
+      APP_JWT_SECRET: "${APP_JWT_SECRET:-CHANGE_ME_TO_A_VERY_LONG_RANDOM_SECRET_MIN_32_CHARS}"
+      APP_CORS_ALLOWED_ORIGINS: "${APP_CORS_ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173,http://localhost:5000}"
+      APP_PUBLIC_URL: "${APP_PUBLIC_URL:-http://localhost}"
+      SPRING_MAIL_HOST: "${SPRING_MAIL_HOST:-}"
+      SPRING_MAIL_PORT: "${SPRING_MAIL_PORT:-587}"
+      SPRING_MAIL_USERNAME: "${SPRING_MAIL_USERNAME:-}"
+      SPRING_MAIL_PASSWORD: "${SPRING_MAIL_PASSWORD:-}"
+      APP_MAIL_FROM: "${APP_MAIL_FROM:-no-reply@indtransfreightsolutions.com}"
+      LOGGING_LEVEL_COM_INDTRANS: "${LOGGING_LEVEL:-INFO}"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/gallery"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    networks:
+      - indtrans-net
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: indtrans-nginx
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./uploads:/app/uploads:ro
+    networks:
+      - indtrans-net
+
+networks:
+  indtrans-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
