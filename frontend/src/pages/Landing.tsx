@@ -6,7 +6,8 @@ import { getFileUrl } from '../services/api';
 // Use the relative `/api` path so the Vite dev server (and the production
 // reverse proxy) forward the call to Spring Boot. Hard-coding localhost:8080
 // breaks the moment the page is served from anywhere other than the dev box.
-const BACKEND_URL = '/api';
+// const BACKEND_URL = '/api';
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
 interface GalleryImage {
   id: string;
