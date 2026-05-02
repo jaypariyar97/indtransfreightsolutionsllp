@@ -489,9 +489,12 @@ export default function ViewGCN() {
         params: { autoprint: 'true' },
         responseType: 'text',
       });
+      const printableHtml = html.includes('<head>')
+        ? html.replace('<head>', `<head><base href="${window.location.origin}/" />`)
+        : html;
 
       printWindow.document.open();
-      printWindow.document.write(html);
+      printWindow.document.write(printableHtml);
       printWindow.document.close();
     } catch (error) {
       printWindow.close();
