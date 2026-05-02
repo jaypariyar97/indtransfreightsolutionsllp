@@ -11,4 +11,5 @@ public interface GcnRepository extends JpaRepository<Gcn, String> {
     boolean existsByGcnNumber(String gcnNumber);
     Optional<Gcn> findByVhcId(String vhcId);
     boolean existsByVhcId(String vhcId);
+    Optional<Gcn> findByReceiptPath(String receiptPath);
 }

@@ -39,7 +39,8 @@ public class AmountInWords {
         
         if (paise > 0) {
             result.append(" and ");
-            convertNumber(paise, new StringBuilder()).append(" Paise");
+            result.append(convertNumber(paise, new StringBuilder()).toString().trim())
+                  .append(" Paise");
         }
         
         result.append(" Only");

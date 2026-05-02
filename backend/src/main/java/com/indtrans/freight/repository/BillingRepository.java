@@ -12,4 +12,5 @@ public interface BillingRepository extends JpaRepository<Billing, String> {
     boolean existsByBillNumber(String billNumber);
     List<Billing> findByGcnId(String gcnId);
     List<Billing> findByVhcId(String vhcId);
+    Optional<Billing> findByReceiptPath(String receiptPath);
 }

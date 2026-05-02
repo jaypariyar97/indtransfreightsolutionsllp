@@ -163,6 +163,7 @@ public class Gcn {
     public void setInsuranceConsignee(Boolean insuranceConsignee) { this.insuranceConsignee = insuranceConsignee; }
     public String getReceiptPath() { return receiptPath; }
     public void setReceiptPath(String receiptPath) { this.receiptPath = receiptPath; }
+    public String getReceiptOriginalName() { return receiptOriginalName; }
     public void setReceiptOriginalName(String receiptOriginalName) { this.receiptOriginalName = receiptOriginalName; }
     public BigDecimal getCustomerFreight() { return customerFreight; }
     public void setCustomerFreight(BigDecimal customerFreight) { this.customerFreight = customerFreight; }

@@ -37,7 +37,7 @@ public class SecurityConfig {
     @Autowired
     private UserDetailsService userDetailsService;
 
-    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5000,http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:http://localhost:3000,http://localhost:5000,http://localhost:5173,https://indtransfreightsolutions.com,https://www.indtransfreightsolutions.com,https://*.vercel.app,https://*.caffeine.xyz}")
     private String allowedOrigins;
 
     @Bean
@@ -86,16 +86,15 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        List<String> origins = Arrays.stream(allowedOrigins.split(","))
+        List<String> originPatterns = Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(s -> !s.isEmpty())
                 .toList();
-        // Use patterns rather than exact origins so Replit *.replit.dev preview works.
-        configuration.setAllowedOriginPatterns(origins);
+
+        configuration.setAllowedOriginPatterns(originPatterns);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -105,4 +104,3 @@ public class SecurityConfig {
         return source;
     }
 }
-

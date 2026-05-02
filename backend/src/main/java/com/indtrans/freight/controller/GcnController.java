@@ -1,21 +1,28 @@
 package com.indtrans.freight.controller;
 
-import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.UUID;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.indtrans.freight.model.Billing;
+import com.indtrans.freight.model.CargoItem;
+import com.indtrans.freight.model.Gcn;
+import com.indtrans.freight.model.Vehicle;
+import com.indtrans.freight.model.Vhc;
+import com.indtrans.freight.repository.BillingRepository;
+import com.indtrans.freight.repository.CargoItemRepository;
+import com.indtrans.freight.repository.GcnRepository;
+import com.indtrans.freight.repository.VehicleRepository;
+import com.indtrans.freight.repository.VhcRepository;
+import com.indtrans.freight.service.GcnPrintTemplateService;
+import com.indtrans.freight.service.GcnService;
+import com.indtrans.freight.util.FileUploadUtil;
+import com.indtrans.freight.util.SerialNumberGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,93 +31,61 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.bind.annotation.DeleteMapping;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.indtrans.freight.model.Billing;
-import com.indtrans.freight.model.CargoItem;
-import com.indtrans.freight.model.Gcn;
-import com.indtrans.freight.repository.BillingRepository;
-import com.indtrans.freight.repository.CargoItemRepository;
-import com.indtrans.freight.repository.GcnRepository;
-import com.indtrans.freight.service.GcnService;
-import com.indtrans.freight.util.SerialNumberGenerator;
-
-
-
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/gcn")
 @CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
 public class GcnController {
-        @Autowired private GcnService gcnService; 
-        @Autowired private SerialNumberGenerator serialNumberGenerator; // ADD THIS
-    @Autowired private GcnRepository gcnRepository;
-    @Autowired private CargoItemRepository cargoItemRepository;
-    @Autowired private BillingRepository billingRepository;
-    @Autowired private com.indtrans.freight.repository.VhcRepository vhcRepository;
-//    @GetMapping
-//    @PreAuthorize("@perm.has('gcn','view')")
-//    public ResponseEntity<List<Gcn>> getAllGcn() {
-//        return ResponseEntity.ok(gcnRepository.findAll());
-//    }
-    
+
+    @Autowired
+    private GcnService gcnService;
+
+    @Autowired
+    private SerialNumberGenerator serialNumberGenerator;
+
+    @Autowired
+    private GcnRepository gcnRepository;
+
+    @Autowired
+    private CargoItemRepository cargoItemRepository;
+
+    @Autowired
+    private BillingRepository billingRepository;
+
+    @Autowired
+    private VhcRepository vhcRepository;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
+
+    @Autowired
+    private GcnPrintTemplateService gcnPrintTemplateService;
+
     @GetMapping
     @PreAuthorize("@perm.has('gcn','view')")
     public ResponseEntity<?> getAllGcn() {
         try {
             List<Gcn> gcns = gcnRepository.findAll();
-
             List<Map<String, Object>> responseList = new ArrayList<>();
 
             for (Gcn gcn : gcns) {
-
-                String vhcNumber = null;
-                if (gcn.getVhcId() != null) {
-                    vhcNumber = vhcRepository.findById(gcn.getVhcId())
-                            .map(v -> v.getVhcNumber())
-                            .orElse(null);
-                }
-
-                Map<String, Object> response = new HashMap<>();
-                response.put("id", gcn.getId());
-                response.put("gcnNumber", gcn.getGcnNumber());
-
-                // ✅ THIS FIXES YOUR UI
-                response.put("vhcNumber", vhcNumber);
-
-                response.put("vhcId", gcn.getVhcId());
-                response.put("customerId", gcn.getCustomerId());
-                response.put("vehicleId", gcn.getVehicleId());
-                response.put("driverId", gcn.getDriverId());
-                response.put("consignorName", gcn.getConsignorName());
-                response.put("consigneeName", gcn.getConsigneeName());
-                response.put("fromLocation", gcn.getFromLocation());
-                response.put("toLocation", gcn.getToLocation());
-                response.put("gcnDate", gcn.getGcnDate());
-                response.put("billingType", gcn.getBillingType());
-                response.put("insuranceConsignor", gcn.getInsuranceConsignor());
-                response.put("insuranceConsignee", gcn.getInsuranceConsignee());
-
-                responseList.add(response);
+                responseList.add(buildGcnResponse(gcn));
             }
 
             return ResponseEntity.ok(responseList);
-
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
-    
-//    @GetMapping("/{id}")
-//    @PreAuthorize("@perm.has('gcn','view')")
-//    public ResponseEntity<Gcn> getGcn(@PathVariable String id) {
-//        return gcnRepository.findById(id)
-//                .map(ResponseEntity::ok)
-//                .orElse(ResponseEntity.notFound().build());
-//    }
+
     @GetMapping("/{id}")
     @PreAuthorize("@perm.has('gcn','view')")
     public ResponseEntity<?> getGcn(@PathVariable String id) {
@@ -118,55 +93,46 @@ public class GcnController {
             Gcn gcn = gcnRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("GCN not found"));
 
-            // 🔥 Fetch VHC using vhcId
-            String vhcNumber = null;
-            if (gcn.getVhcId() != null) {
-                vhcNumber = vhcRepository.findById(gcn.getVhcId())
-                        .map(v -> v.getVhcNumber())
-                        .orElse(null);
-            }
-
-            // ✅ FIX: Use HashMap (no limit like Map.of)
-            Map<String, Object> response = new HashMap<>();
-
-            response.put("id", gcn.getId());
-            response.put("gcnNumber", gcn.getGcnNumber());
-
-            // ✅ IMPORTANT: match frontend (vhcNumber)
-            response.put("vhcNumber", vhcNumber);
-
-            response.put("vhcId", gcn.getVhcId());
-            response.put("customerId", gcn.getCustomerId());
-            response.put("vehicleId", gcn.getVehicleId());
-            response.put("driverId", gcn.getDriverId());
-            response.put("consignorName", gcn.getConsignorName());
-            response.put("consignorAddress", gcn.getConsignorAddress());
-            response.put("consigneeName", gcn.getConsigneeName());
-            response.put("consigneeAddress", gcn.getConsigneeAddress());
-            response.put("fromLocation", gcn.getFromLocation());
-            response.put("toLocation", gcn.getToLocation());
-            response.put("gcnDate", gcn.getGcnDate());
-            response.put("insuranceConsignor", gcn.getInsuranceConsignor());
-            response.put("insuranceConsignee", gcn.getInsuranceConsignee());
-
-            return ResponseEntity.ok(response);
-
+            return ResponseEntity.ok(buildGcnResponse(gcn));
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @GetMapping("/{id}/cargo")
     @PreAuthorize("@perm.has('gcn','add')")
     public ResponseEntity<List<CargoItem>> getCargoItems(@PathVariable String id) {
         return ResponseEntity.ok(cargoItemRepository.findByGcnId(id));
     }
-    
+
+    @GetMapping(value = "/{id}/printable", produces = MediaType.TEXT_HTML_VALUE)
+    @PreAuthorize("@perm.has('gcn','view')")
+    public ResponseEntity<String> getPrintableGcn(
+            @PathVariable String id,
+            @RequestParam(value = "autoprint", defaultValue = "true") boolean autoPrint) {
+        try {
+            Gcn gcn = gcnRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("GCN not found"));
+
+            List<CargoItem> cargoItems = cargoItemRepository.findByGcnId(id);
+            String vehicleNumber = resolveVehicleNumber(gcn);
+            String html = gcnPrintTemplateService.buildPrintableHtml(gcn, cargoItems, vehicleNumber, autoPrint);
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(html);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.notFound().build();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping
     @PreAuthorize("@perm.has('gcn','add')")
     public ResponseEntity<Gcn> createGcn(
-            // REMOVE: @RequestParam("gcnNumber") String gcnNumber,
             @RequestParam("vhcId") String vhcId,
             @RequestParam("customerId") String customerId,
             @RequestParam("vehicleId") String vehicleId,
@@ -187,18 +153,15 @@ public class GcnController {
             @RequestParam(value = "insuranceConsignee", required = false, defaultValue = "false") Boolean insuranceConsignee,
             @RequestParam(value = "receiptFile", required = false) MultipartFile receiptFile,
             @RequestParam(value = "cargoItems", required = false) String cargoItemsJson) {
-        
+
         try {
-            // ✅ GENERATE GCN NUMBER FIRST (before any save)
             String generatedGcnNumber = serialNumberGenerator.generateGcnNumber();
-            
-            // Check if somehow this number already exists (safety check)
             if (gcnRepository.existsByGcnNumber(generatedGcnNumber)) {
                 return ResponseEntity.badRequest().build();
             }
-            
+
             Gcn gcn = new Gcn();
-            gcn.setGcnNumber(generatedGcnNumber);  // ✅ USE THE GENERATED NUMBER
+            gcn.setGcnNumber(generatedGcnNumber);
             gcn.setVhcId(vhcId);
             gcn.setCustomerId(customerId);
             gcn.setVehicleId(vehicleId);
@@ -218,64 +181,81 @@ public class GcnController {
             gcn.setInsuranceConsignor(insuranceConsignor);
             gcn.setInsuranceConsignee(insuranceConsignee);
             gcn.setStatus("ACTIVE");
-            
-            // Handle receipt upload if provided
+
             if (receiptFile != null && !receiptFile.isEmpty()) {
-                gcn.setReceiptPath("/uploads/receipts/" + receiptFile.getOriginalFilename());
+                gcn.setReceiptPath(FileUploadUtil.saveToFolder(receiptFile, "receipts"));
+                gcn.setReceiptOriginalName(receiptFile.getOriginalFilename());
             }
-            
-            // ✅ Save the GCN with the generated number
+
             Gcn saved = gcnRepository.save(gcn);
-            
-            // Parse and save cargo items
+
             if (cargoItemsJson != null && !cargoItemsJson.isEmpty() && !"[]".equals(cargoItemsJson.trim())) {
                 try {
                     ObjectMapper mapper = new ObjectMapper().registerModule(new JavaTimeModule());
                     List<Map<String, Object>> rawItems = mapper.readValue(
-                            cargoItemsJson, new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+                            cargoItemsJson,
+                            new com.fasterxml.jackson.core.type.TypeReference<List<Map<String, Object>>>() {});
+
                     for (Map<String, Object> raw : rawItems) {
-                        CargoItem ci = new CargoItem();
-                        ci.setGcnId(saved.getId());
-                        Object desc = raw.get("description");
-                        if (desc == null || desc.toString().isBlank()) continue;
-                        ci.setDescription(desc.toString());
-                        Object pt = raw.get("packingType");
-                        if (pt != null) ci.setPackingType(pt.toString());
-                        Object qty = raw.get("quantity");
-                        if (qty != null && !qty.toString().isBlank())
-                            ci.setQuantity(Integer.valueOf(qty.toString().replaceAll("\\..*", "")));
+                        CargoItem cargoItem = new CargoItem();
+                        cargoItem.setGcnId(saved.getId());
+
+                        Object description = raw.get("description");
+                        if (description == null || description.toString().isBlank()) {
+                            continue;
+                        }
+
+                        cargoItem.setDescription(description.toString());
+                        Object packingType = raw.get("packingType");
+                        if (packingType != null) {
+                            cargoItem.setPackingType(packingType.toString());
+                        }
+
+                        Object quantity = raw.get("quantity");
+                        if (quantity != null && !quantity.toString().isBlank()) {
+                            cargoItem.setQuantity(Integer.valueOf(quantity.toString().replaceAll("\\..*", "")));
+                        }
+
                         Object unit = raw.get("unit");
-                        if (unit != null) ci.setUnit(unit.toString());
-                        Object wt = raw.get("weight");
-                        if (wt != null && !wt.toString().isBlank())
-                            ci.setWeight(new BigDecimal(wt.toString()));
-                        Object inv = raw.get("invoiceNumber");
-                        if (inv != null) ci.setInvoiceNumber(inv.toString());
-                        Object invDate = raw.get("invoiceDate");
-                        if (invDate != null && !invDate.toString().isBlank())
-                            ci.setInvoiceDate(LocalDate.parse(invDate.toString()));
-                        Object invAmt = raw.get("invoiceAmount");
-                        if (invAmt != null && !invAmt.toString().isBlank())
-                            ci.setInvoiceAmount(new BigDecimal(invAmt.toString()));
-                        cargoItemRepository.save(ci);
+                        if (unit != null) {
+                            cargoItem.setUnit(unit.toString());
+                        }
+
+                        Object weight = raw.get("weight");
+                        if (weight != null && !weight.toString().isBlank()) {
+                            cargoItem.setWeight(new BigDecimal(weight.toString()));
+                        }
+
+                        Object invoiceNumber = raw.get("invoiceNumber");
+                        if (invoiceNumber != null) {
+                            cargoItem.setInvoiceNumber(invoiceNumber.toString());
+                        }
+
+                        Object invoiceDate = raw.get("invoiceDate");
+                        if (invoiceDate != null && !invoiceDate.toString().isBlank()) {
+                            cargoItem.setInvoiceDate(LocalDate.parse(invoiceDate.toString()));
+                        }
+
+                        Object invoiceAmount = raw.get("invoiceAmount");
+                        if (invoiceAmount != null && !invoiceAmount.toString().isBlank()) {
+                            cargoItem.setInvoiceAmount(new BigDecimal(invoiceAmount.toString()));
+                        }
+
+                        cargoItemRepository.save(cargoItem);
                     }
                 } catch (Exception ex) {
                     System.err.println("Failed to parse cargo items: " + ex.getMessage());
                 }
             }
-            
-            // ✅ Auto-create billing entry (your existing method - already uses generateBillNumber())
+
             createBillingFromGcn(saved);
-            
-            // ✅ Return the saved GCN (with generated number)
             return ResponseEntity.ok(saved);
-            
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @PutMapping("/{id}/freight")
     @PreAuthorize("@perm.has('gcn','edit')")
     public ResponseEntity<Gcn> updateFreight(
@@ -286,95 +266,78 @@ public class GcnController {
             @RequestParam(value = "unloadingCharge", required = false, defaultValue = "0") BigDecimal unloadingCharge,
             @RequestParam(value = "detentionCharge", required = false, defaultValue = "0") BigDecimal detentionCharge,
             @RequestParam(value = "othersCharge", required = false, defaultValue = "0") BigDecimal othersCharge,
+            @RequestParam(value = "billingType", required = false) String billingType,
             @RequestParam(value = "paymentTerms", required = false) String paymentTerms,
             @RequestParam(value = "remarks", required = false) String remarks) {
-        
+
         try {
             Gcn gcn = gcnRepository.findById(id).orElseThrow(() -> new RuntimeException("GCN not found"));
-            
             gcn.setCustomerFreight(customerFreight);
             gcn.setAdvance(advance);
             gcn.setLoadingCharge(loadingCharge);
             gcn.setUnloadingCharge(unloadingCharge);
             gcn.setDetentionCharge(detentionCharge);
             gcn.setOthersCharge(othersCharge);
+            if (billingType != null && !billingType.isBlank()) {
+                gcn.setBillingType(billingType);
+            }
             gcn.setPaymentTerms(paymentTerms);
             gcn.setRemarks(remarks);
-            
+
             Gcn updated = gcnRepository.save(gcn);
             return ResponseEntity.ok(updated);
-            
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
+
     @PostMapping("/{id}/receipt")
     @PreAuthorize("@perm.has('gcn','add')")
     public ResponseEntity<?> uploadReceipt(
             @PathVariable String id,
             @RequestParam("receiptFile") MultipartFile file) {
-        
+
         try {
             Gcn gcn = gcnRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("GCN not found"));
-            
+                    .orElseThrow(() -> new RuntimeException("GCN not found"));
+
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("File is empty");
             }
-            
-            // Create upload directory if not exists
-            String uploadDir = "uploads/receipts/";
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+
+            if (gcn.getReceiptPath() != null && !gcn.getReceiptPath().isBlank()) {
+                FileUploadUtil.deleteFile(gcn.getReceiptPath());
             }
-            
-            // Generate unique filename
-            String originalFilename = file.getOriginalFilename();
-            String extension = originalFilename != null ? 
-                originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
-            String filename = UUID.randomUUID().toString() + extension;
-            
-            // Save file
-            Path filePath = uploadPath.resolve(filename);
-            Files.copy(file.getInputStream(), filePath);
-            
-         // Update GCN with receipt path AND original filename for display.
-            String receiptPath = "/uploads/receipts/" + filename;
+
+            String receiptPath = FileUploadUtil.saveToFolder(file, "receipts");
             gcn.setReceiptPath(receiptPath);
-            gcn.setReceiptOriginalName(originalFilename);
+            gcn.setReceiptOriginalName(file.getOriginalFilename());
             gcnRepository.save(gcn);
-            
+
             return ResponseEntity.ok().body(Map.of(
-                "message", "Receipt uploaded successfully",
-                "path", receiptPath
+                    "message", "Receipt uploaded successfully",
+                    "path", receiptPath
             ));
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-            return ResponseEntity.internalServerError().body("Failed to upload file");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().body("Failed to update GCN");
         }
     }
-    
+
     private void createBillingFromGcn(Gcn gcn) {
         try {
-            // Check if billing already exists
             if (!billingRepository.findByGcnId(gcn.getId()).isEmpty()) {
                 return;
             }
-            
-//            String billNumber = serialNumberGenerator.generateBillNumber();
+
             String billNumber = cargoItemRepository.findByGcnId(gcn.getId())
                     .stream()
                     .findFirst()
                     .map(CargoItem::getInvoiceNumber)
                     .filter(inv -> inv != null && !inv.isBlank())
                     .orElse(serialNumberGenerator.generateBillNumber());
-            
+
             Billing billing = new Billing();
             billing.setBillNumber(billNumber);
             billing.setGcnId(gcn.getId());
@@ -383,17 +346,17 @@ public class GcnController {
             billing.setCustomerAddress(gcn.getConsignorAddress());
             billing.setCustomerGst(gcn.getConsignorGst());
             billing.setBillDate(gcn.getGcnDate());
-            billing.setAmount(BigDecimal.ZERO); // Will be updated when freight is added
+            billing.setAmount(BigDecimal.ZERO);
             billing.setPaidAmount(BigDecimal.ZERO);
             billing.setStatus("PENDING");
             billing.setSourceType("GCN");
-            
+
             billingRepository.save(billing);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
     @DeleteMapping("/{id}")
     @PreAuthorize("@perm.has('gcn','delete')")
     @org.springframework.transaction.annotation.Transactional
@@ -402,10 +365,10 @@ public class GcnController {
             if (!gcnRepository.existsById(id)) {
                 return ResponseEntity.notFound().build();
             }
-            // Cascade-delete dependents (cargo + auto-generated billing rows).
+
             cargoItemRepository.deleteByGcnId(id);
             billingRepository.findByGcnId(id)
-                    .forEach(b -> billingRepository.deleteById(b.getId()));
+                    .forEach(billing -> billingRepository.deleteById(billing.getId()));
             gcnRepository.deleteById(id);
             return ResponseEntity.noContent().build();
         } catch (Exception e) {
@@ -413,5 +376,60 @@ public class GcnController {
             return ResponseEntity.internalServerError().build();
         }
     }
-    
+
+    private Map<String, Object> buildGcnResponse(Gcn gcn) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", gcn.getId());
+        response.put("gcnNumber", gcn.getGcnNumber());
+        response.put("vhcNumber", resolveVhcNumber(gcn));
+        response.put("vehicleNumber", resolveVehicleNumber(gcn));
+        response.put("vhcId", gcn.getVhcId());
+        response.put("customerId", gcn.getCustomerId());
+        response.put("vehicleId", gcn.getVehicleId());
+        response.put("driverId", gcn.getDriverId());
+        response.put("consignorName", gcn.getConsignorName());
+        response.put("consignorAddress", gcn.getConsignorAddress());
+        response.put("consignorGst", gcn.getConsignorGst());
+        response.put("consignorPincode", gcn.getConsignorPincode());
+        response.put("consigneeName", gcn.getConsigneeName());
+        response.put("consigneeAddress", gcn.getConsigneeAddress());
+        response.put("consigneeGst", gcn.getConsigneeGst());
+        response.put("consigneePincode", gcn.getConsigneePincode());
+        response.put("fromLocation", gcn.getFromLocation());
+        response.put("toLocation", gcn.getToLocation());
+        response.put("gcnDate", gcn.getGcnDate());
+        response.put("billingType", gcn.getBillingType());
+        response.put("insuranceConsignor", gcn.getInsuranceConsignor());
+        response.put("insuranceConsignee", gcn.getInsuranceConsignee());
+        response.put("customerFreight", gcn.getCustomerFreight());
+        response.put("advance", gcn.getAdvance());
+        response.put("loadingCharge", gcn.getLoadingCharge());
+        response.put("unloadingCharge", gcn.getUnloadingCharge());
+        response.put("detentionCharge", gcn.getDetentionCharge());
+        response.put("othersCharge", gcn.getOthersCharge());
+        response.put("paymentTerms", gcn.getPaymentTerms());
+        response.put("remarks", gcn.getRemarks());
+        response.put("status", gcn.getStatus());
+        response.put("receiptPath", gcn.getReceiptPath());
+        response.put("receiptOriginalName", gcn.getReceiptOriginalName());
+        return response;
+    }
+
+    private String resolveVhcNumber(Gcn gcn) {
+        if (gcn.getVhcId() == null) {
+            return null;
+        }
+        return vhcRepository.findById(gcn.getVhcId())
+                .map(Vhc::getVhcNumber)
+                .orElse(null);
+    }
+
+    private String resolveVehicleNumber(Gcn gcn) {
+        if (gcn.getVehicleId() == null) {
+            return null;
+        }
+        return vehicleRepository.findById(gcn.getVehicleId())
+                .map(Vehicle::getVehicleNumber)
+                .orElse(null);
+    }
 }
