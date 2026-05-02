@@ -166,7 +166,28 @@ export default function VHC() {
   };
 
   const handlePrint = () => {
+    if (!viewingVHC) {
+      window.print();
+      return;
+    }
+
+    const originalTitle = document.title;
+    const nextTitle = `Vehicle Hire Challan - ${viewingVHC.vhcNumber}`;
+
+    const restoreTitle = () => {
+      document.title = originalTitle;
+      window.removeEventListener('afterprint', restoreTitle);
+    };
+
+    document.title = nextTitle;
+    window.addEventListener('afterprint', restoreTitle);
     window.print();
+
+    window.setTimeout(() => {
+      if (document.title === nextTitle) {
+        restoreTitle();
+      }
+    }, 1000);
   };
 
   const handleProceedToGCN = () => {
