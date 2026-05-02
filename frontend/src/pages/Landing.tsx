@@ -53,10 +53,20 @@ export default function Landing() {
   };
 
   // Helper function to get full image URL
-  const getImageUrl = (imagePath: string) => {
-    if (!imagePath) return '/placeholder-image.jpg';
-    return getFileUrl(imagePath);
-  };
+  // const getImageUrl = (imagePath: string) => {
+  //   if (!imagePath) return '/placeholder-image.jpg';
+  //   return getFileUrl(imagePath);
+  // };
+      const getImageUrl = (imagePath: string) => {
+        if (!imagePath) return '/placeholder-image.jpg';
+        if (/^https?:\/\//i.test(imagePath)) return imagePath; // already absolute
+        
+        const filename = imagePath.split('/').pop();
+        if (!filename) return '/placeholder-image.jpg';
+        
+        const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '');
+        return `${base}/gallery/files/${filename}`;
+      };
 
   return (
     <div className="min-h-screen bg-white">
