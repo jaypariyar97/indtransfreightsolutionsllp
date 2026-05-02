@@ -75,6 +75,35 @@ interface FreightForm {
   remarks: string;
 }
 
+const formatBillingTypeLabel = (billingType?: string, paymentTerms?: string) => {
+  if (paymentTerms) {
+    return paymentTerms;
+  }
+
+  switch (billingType) {
+    case 'TO_PAY':
+      return 'To Pay';
+    case 'PAID':
+      return 'Paid';
+    case 'TO_BE_BILLED':
+      return 'To Be Billed';
+    default:
+      return 'To Pay';
+  }
+};
+
+const toBillingTypeValue = (paymentTerms: string) => {
+  switch (paymentTerms) {
+    case 'Paid':
+      return 'PAID';
+    case 'To Be Billed':
+      return 'TO_BE_BILLED';
+    case 'To Pay':
+    default:
+      return 'TO_PAY';
+  }
+};
+
 // --- Helper Component for Print Page (Ensures Full Page Layout) ---
 const PrintCopyPage = ({
   type,
@@ -424,7 +453,7 @@ export default function ViewGCN() {
         unloadingCharge: gcn.unloadingCharge?.toString() || '',
         detentionCharge: gcn.detentionCharge?.toString() || '',
         othersCharge: gcn.othersCharge?.toString() || '',
-        paymentTerms: gcn.paymentTerms || 'To Pay',
+        paymentTerms: formatBillingTypeLabel(gcn.billingType, gcn.paymentTerms),
         remarks: gcn.remarks || ''
       });
     } catch (error) {
@@ -444,8 +473,36 @@ export default function ViewGCN() {
     }
   };
 
-  const handlePrint = () => {
-    window.print();
+  const openPrintableGcn = async (gcn: GCN) => {
+    const printWindow = window.open('', '_blank', 'width=900,height=700');
+
+    if (!printWindow) {
+      notify('Please allow popups to print the GCN');
+      return;
+    }
+
+    printWindow.document.write('<p style="font-family: Arial, sans-serif; padding: 16px;">Preparing printable copy...</p>');
+    printWindow.document.close();
+
+    try {
+      const html = await api.get<string>(`/gcn/${gcn.id}/printable`, {
+        params: { autoprint: 'true' },
+        responseType: 'text',
+      });
+
+      printWindow.document.open();
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } catch (error) {
+      printWindow.close();
+      console.error('Failed to open printable GCN:', error);
+      notify('Failed to generate the printable GCN');
+    }
+  };
+
+  const handlePrint = async () => {
+    if (!viewingGCN) return;
+    await openPrintableGcn(viewingGCN);
   };
 
   const handleUploadReceipt = async () => {
@@ -489,6 +546,7 @@ export default function ViewGCN() {
       formData.append('unloadingCharge', freightForm.unloadingCharge || '0');
       formData.append('detentionCharge', freightForm.detentionCharge || '0');
       formData.append('othersCharge', freightForm.othersCharge || '0');
+      formData.append('billingType', toBillingTypeValue(freightForm.paymentTerms));
       formData.append('paymentTerms', freightForm.paymentTerms);
       formData.append('remarks', freightForm.remarks);
 
@@ -506,7 +564,7 @@ export default function ViewGCN() {
         unloadingCharge: updatedGCN.unloadingCharge?.toString() || '',
         detentionCharge: updatedGCN.detentionCharge?.toString() || '',
         othersCharge: updatedGCN.othersCharge?.toString() || '',
-        paymentTerms: updatedGCN.paymentTerms || 'To Pay',
+        paymentTerms: formatBillingTypeLabel(updatedGCN.billingType, updatedGCN.paymentTerms),
         remarks: updatedGCN.remarks || ''
       });
 
@@ -1110,11 +1168,7 @@ const filteredGCNs = gcns
                           View
                         </button>
                         <button
-                          onClick={async () => {
-                            await handleViewGCN(gcn);
-                            // Wait for the print template to render before opening the dialog.
-                            setTimeout(() => window.print(), 250);
-                          }}
+                          onClick={() => openPrintableGcn(gcn)}
                           className="flex items-center gap-1 px-3 py-1.5 bg-orange-600 text-white rounded text-xs hover:bg-orange-700"
                         >
                           <Printer className="w-3 h-3" />
