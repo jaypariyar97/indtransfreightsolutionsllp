@@ -91,10 +91,10 @@ export default function Landing() {
             </div>
 
             {/* 3. Buttons - Right Side */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <button 
                 onClick={() => navigate('/admin/login')}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 border-2 border-gray-300 rounded-lg text-gray-700 hover:border-orange-600 hover:text-orange-600 transition font-bold uppercase text-xs tracking-wide"
+                className="flex items-center gap-1 sm:gap-2 px-3 py-2 sm:px-4 border-2 border-gray-300 rounded-lg text-gray-700 hover:border-orange-600 hover:text-orange-600 transition font-bold uppercase text-[10px] sm:text-xs tracking-wide whitespace-nowrap"
               >
                 Login
               </button>
