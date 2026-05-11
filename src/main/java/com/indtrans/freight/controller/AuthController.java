@@ -57,28 +57,54 @@ public class AuthController {
         return ResponseEntity.ok(AuthResponse.UserInfo.fromEmployee(employee));
     }
 
-    @PostMapping("/change-password")
-    public ResponseEntity<?> changePassword(
-            @AuthenticationPrincipal UserDetails user,
-            @RequestBody Map<String, String> body) {
-        if (user == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
-        }
-        String currentPassword = body.get("currentPassword");
-        String newPassword = body.get("newPassword");
-        if (currentPassword == null || newPassword == null) {
-            return ResponseEntity.badRequest().body(Map.of("error", "currentPassword and newPassword are required"));
-        }
-        try {
-            authService.changePassword(user.getUsername(), currentPassword, newPassword);
-            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
-        } catch (org.springframework.security.authentication.BadCredentialsException e) {
-            return ResponseEntity.status(400).body(Map.of("error", e.getMessage()));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-        }
+   @PostMapping("/change-password")
+public ResponseEntity<?> changePassword(
+        @RequestBody Map<String, String> body) {
+
+    org.springframework.security.core.Authentication authentication =
+            org.springframework.security.core.context.SecurityContextHolder
+                    .getContext()
+                    .getAuthentication();
+
+    if (authentication == null || !authentication.isAuthenticated()) {
+        return ResponseEntity.status(401)
+                .body(Map.of("error", "Not authenticated"));
     }
 
+    String email = authentication.getName();
+
+    String currentPassword = body.get("currentPassword");
+    String newPassword = body.get("newPassword");
+
+    if (currentPassword == null || newPassword == null) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error",
+                        "currentPassword and newPassword are required"));
+    }
+
+    try {
+        authService.changePassword(
+                email,
+                currentPassword,
+                newPassword
+        );
+
+        return ResponseEntity.ok(
+                Map.of("message",
+                        "Password changed successfully")
+        );
+
+    } catch (org.springframework.security.authentication.BadCredentialsException e) {
+
+        return ResponseEntity.status(400)
+                .body(Map.of("error", e.getMessage()));
+
+    } catch (IllegalArgumentException e) {
+
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+    }
+}
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> body) {
         String email = body.get("email");
