@@ -86,11 +86,14 @@ class ApiService {
     this.api.interceptors.response.use(
       (response: AxiosResponse) => response,
       (error) => {
-        if (error.response?.status === 401) {
-          localStorage.removeItem('jwt_token');
-          localStorage.removeItem('user');
-          window.location.href = '/admin/login';
-        }
+       if (
+              error.response?.status === 401 &&
+              !error.config?.url?.includes('/auth/change-password')
+            ) {
+              localStorage.removeItem('jwt_token');
+              localStorage.removeItem('user');
+              window.location.href = '/admin/login';
+            }
         return Promise.reject(error);
       }
     );

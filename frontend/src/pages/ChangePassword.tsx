@@ -42,6 +42,7 @@ export default function ChangePassword() {
 
   const onSubmit = async (data: FormValues) => {
     setSubmitting(true);
+    console.log('JWT TOKEN:', localStorage.getItem('jwt_token'));
     try {
       await api.post('/auth/change-password', {
         currentPassword: data.currentPassword,
