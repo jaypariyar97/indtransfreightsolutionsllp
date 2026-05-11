@@ -1,25 +1,37 @@
-# Environment files
-.env
-.env.local
-.env.*.local
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# Runtime data
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# Runtime state - never commit live data or uploaded files
+data/
 uploads/
-logs/
-backend/data/
-backend/uploads/**
-!backend/uploads/
-!backend/uploads/**/
-!backend/uploads/**/.gitkeep
-
-# Build output
-backend/target/
-frontend/dist/
-
-# Dependencies
-frontend/node_modules/
-node_modules/
-
-# IDE / OS noise
-.DS_Store
-Thumbs.db
