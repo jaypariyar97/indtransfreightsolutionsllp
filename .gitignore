@@ -35,3 +35,13 @@ build/
 # Runtime state - never commit live data or uploaded files
 data/
 uploads/
+logs/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Backend runtime/build output
+backend/target/
+backend/data/
+backend/uploads/

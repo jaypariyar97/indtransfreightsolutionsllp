@@ -12,9 +12,9 @@ This repository is now set up to deploy on a Linux VPS with Docker Compose while
 
 1. Copy `.env.example` to `.env`.
 2. Replace these values before going live:
-   - `MYSQL_PASSWORD`
-   - `MYSQL_ROOT_PASSWORD`
+   - `POSTGRES_PASSWORD`
    - `APP_JWT_SECRET`
+   - `APP_BOOTSTRAP_ADMIN_PASSWORD`
    - `APP_CORS_ALLOWED_ORIGINS`
    - `APP_PUBLIC_URL`
    - SMTP settings if you want password-reset emails delivered
@@ -51,7 +51,7 @@ docker compose logs -f nginx
 
 ## 5. What the stack does
 
-- `db`: MySQL 8.4 with persistent volume storage
+- `db`: PostgreSQL 16 with persistent volume storage
 - `app`: Spring Boot backend plus built React frontend
 - `nginx`: public entrypoint on port `80`
 
@@ -74,5 +74,5 @@ For production HTTPS, place one of these in front of the stack:
 
 Once HTTPS is enabled, update:
 
-- `APP_PUBLIC_URL=https://your-domain.com`
-- `APP_CORS_ALLOWED_ORIGINS=https://your-domain.com`
+- `APP_PUBLIC_URL=https://www.indtransfreightsolutions.com`
+- `APP_CORS_ALLOWED_ORIGINS=https://www.indtransfreightsolutions.com`

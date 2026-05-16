@@ -86,54 +86,23 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    // @Bean
-    // public CorsConfigurationSource corsConfigurationSource() {
-    //     CorsConfiguration configuration = new CorsConfiguration();
-    //     List<String> originPatterns = Arrays.stream(allowedOrigins.split(","))
-    //             .map(String::trim)
-    //             .filter(s -> !s.isEmpty())
-    //             .toList();
+    
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        List<String> originPatterns = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
 
-    //     configuration.setAllowedOriginPatterns(originPatterns);
-    //     configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
-    //     configuration.setAllowedHeaders(Arrays.asList("*"));
-    //     configuration.setAllowCredentials(true);
+        configuration.setAllowedOriginPatterns(originPatterns);
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+        configuration.setAllowCredentials(true);
 
-    //     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    //     source.registerCorsConfiguration("/**", configuration);
-    //     return source;
-    // }
-         @Bean
-            public CorsConfigurationSource corsConfigurationSource() {
-
-                CorsConfiguration configuration = new CorsConfiguration();
-
-                configuration.setAllowedOriginPatterns(Arrays.asList(
-                        "https://indtransfreightsolutionsllp.vercel.app",
-                        "https://www.indtransfreightsolutions.com",
-                        "https://indtransfreightsolutions.com"
-                ));
-
-                configuration.setAllowedMethods(Arrays.asList(
-                        "GET",
-                        "POST",
-                        "PUT",
-                        "DELETE",
-                        "OPTIONS",
-                        "PATCH"
-                ));
-
-                configuration.setAllowedHeaders(Arrays.asList("*"));
-
-                configuration.setExposedHeaders(Arrays.asList("Authorization"));
-
-                configuration.setAllowCredentials(true);
-
-                UrlBasedCorsConfigurationSource source =
-                        new UrlBasedCorsConfigurationSource();
-
-                source.registerCorsConfiguration("/**", configuration);
-
-                return source;
-            }
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }

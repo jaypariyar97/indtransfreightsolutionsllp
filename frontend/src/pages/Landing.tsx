@@ -1,13 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, Package, Shield, Clock, Phone, Mail, MapPin, ChevronRight, Award, Users, Globe, Search } from 'lucide-react';
-import { getFileUrl } from '../services/api';
-
-// Use the relative `/api` path so the Vite dev server (and the production
-// reverse proxy) forward the call to Spring Boot. Hard-coding localhost:8080
-// breaks the moment the page is served from anywhere other than the dev box.
-// const BACKEND_URL = '/api';
-const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+import { apiBaseUrl, getFileUrl } from '../services/api';
 
 interface GalleryImage {
   id: string;
@@ -38,7 +32,7 @@ export default function Landing() {
 
   const fetchGalleryImages = async () => {
     try {
-      const response = await fetch(`${BACKEND_URL}/gallery`);
+      const response = await fetch(`${apiBaseUrl}/gallery`);
       if (response.ok) {
         const data = await response.json();
         // Filter only active images
@@ -57,16 +51,7 @@ export default function Landing() {
   //   if (!imagePath) return '/placeholder-image.jpg';
   //   return getFileUrl(imagePath);
   // };
-      const getImageUrl = (imagePath: string) => {
-        if (!imagePath) return '/placeholder-image.jpg';
-        if (/^https?:\/\//i.test(imagePath)) return imagePath; // already absolute
-        
-        const filename = imagePath.split('/').pop();
-        if (!filename) return '/placeholder-image.jpg';
-        
-        const base = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api').replace(/\/$/, '');
-        return `${base}/gallery/files/${filename}`;
-      };
+  const getImageUrl = (imagePath: string) => getFileUrl(imagePath) || '/placeholder-image.jpg';
 
   return (
     <div className="min-h-screen bg-white">

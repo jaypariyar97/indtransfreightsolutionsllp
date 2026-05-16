@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Package, Truck, CheckCircle2, AlertTriangle, Clock, Search } from 'lucide-react';
+import { apiBaseUrl } from '../services/api';
 
 interface TrackingEvent {
   id: string;
@@ -68,7 +69,7 @@ export default function TrackingPublic() {
     if (!gcnNumber) return;
     setLoading(true);
     setError(null);
-    fetch(`/api/public/tracking/${encodeURIComponent(gcnNumber)}`)
+    fetch(`${apiBaseUrl}/public/tracking/${encodeURIComponent(gcnNumber)}`)
       .then(async r => {
         if (!r.ok) {
           const body = await r.json().catch(() => ({}));

@@ -24,6 +24,7 @@ export default defineConfig({
         target: process.env.BACKEND_URL || 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
       },
       // Same for static uploads served directly off the backend.
       '/uploads': {
