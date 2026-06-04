@@ -1,0 +1,15 @@
+{
+  "canisters": {
+    "freight_backend": {
+      "main": "src/freight_backend/main.mo",
+      "type": "motoko"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "mops"
+    }
+  },
+  "output_env_file": ".env.local",
+  "version": 1
+}
