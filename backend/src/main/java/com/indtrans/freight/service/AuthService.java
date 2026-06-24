@@ -77,7 +77,7 @@ public class AuthService {
 
             // Find employee by email + role
             Optional<Employee> employeeOpt =
-                    employeeRepository.findByEmailAndRole(
+                    employeeRepository.findByEmailIgnoreCaseAndRole(
                             normalizedEmail,
                             targetRole
                     );
@@ -159,7 +159,7 @@ public class AuthService {
         String normalizedEmail =
                 email.trim().toLowerCase();
 
-        if (employeeRepository.existsByEmail(normalizedEmail)) {
+        if (employeeRepository.existsByEmailIgnoreCase(normalizedEmail)) {
 
             throw new IllegalStateException(
                     "Admin user already exists"
@@ -208,7 +208,7 @@ public class AuthService {
                 normalizedEmail);
 
         Employee employee = employeeRepository
-                .findByEmail(normalizedEmail)
+                .findByEmailIgnoreCase(normalizedEmail)
                 .orElseThrow(() -> {
 
                     log.error("❌ User not found: {}",

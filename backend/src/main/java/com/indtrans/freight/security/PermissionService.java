@@ -57,7 +57,7 @@ public class PermissionService {
                 : auth.getName();
         if (email == null) return false;
 
-        return employeeRepository.findByEmail(email)
+        return employeeRepository.findByEmailIgnoreCase(email)
                 .map(emp -> evaluate(emp, module, action))
                 .orElse(false);
     }

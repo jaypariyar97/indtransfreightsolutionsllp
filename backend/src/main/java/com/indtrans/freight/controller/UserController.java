@@ -72,7 +72,7 @@ public class UserController {
             if (isBlank(name) || isBlank(email) || isBlank(password)) {
                 return ResponseEntity.badRequest().body(Map.of("error", "name, email and password are required"));
             }
-            if (employeeRepository.existsByEmail(email.trim())) {
+            if (employeeRepository.existsByEmailIgnoreCase(email.trim())) {
                 return ResponseEntity.badRequest().body(Map.of("error", "User with this email already exists"));
             }
 

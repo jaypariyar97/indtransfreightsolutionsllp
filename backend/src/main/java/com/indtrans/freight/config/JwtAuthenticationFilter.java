@@ -87,10 +87,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     log.debug("Authentication set in SecurityContext for: {}", userEmail);
                 } else {
                     log.debug("Token validation failed for: {}", userEmail);
+                    log.warn("JWT validation failed for: {} (signature/expiry mismatch)", userEmail);
+
                 }
             }
-        } catch (Exception e) {
+        } catch (org.springframework.security.core.userdetails.UsernameNotFoundException e) {
             // Token is invalid or expired - just continue without authentication
+            log.debug("JWT references a user that does not exist in DB: {}", e.getMessage());
+        }catch (Exception e) {
             log.debug("JWT validation failed: {}", e.getMessage());
         }
         

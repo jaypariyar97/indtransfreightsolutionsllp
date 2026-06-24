@@ -82,7 +82,7 @@ public class DataInitializer {
                 log.warn("Using the default bootstrap admin password for embedded H2 only. Set APP_BOOTSTRAP_ADMIN_PASSWORD for non-local deployments.");
             }
 
-            if (!employeeRepository.existsByEmail(adminEmail)) {
+            if (!employeeRepository.existsByEmailIgnoreCase(adminEmail)) {
                 try {
                     authService.createInitialAdmin(
                             "System Administrator",

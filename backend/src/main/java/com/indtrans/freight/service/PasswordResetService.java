@@ -39,7 +39,7 @@ public class PasswordResetService {
      */
     @Transactional
     public void requestReset(String email) {
-        Optional<Employee> match = employeeRepository.findByEmail(email);
+        Optional<Employee> match = employeeRepository.findByEmailIgnoreCase(email);
         if (match.isEmpty()) {
             // Brief delay to make timing similar to the success branch.
             try { Thread.sleep(120); } catch (InterruptedException ignore) {

@@ -7,10 +7,10 @@ import java.util.Optional;
 
 @Repository
 public interface EmployeeRepository extends JpaRepository<Employee, String> {
-    Optional<Employee> findByEmail(String email);
+    Optional<Employee> findByEmailIgnoreCase(String email);
     
     // ✅ Add this method to filter by role (matches your ENUM database)
-    Optional<Employee> findByEmailAndRole(String email, Employee.Role role);
+    Optional<Employee> findByEmailIgnoreCaseAndRole(String email, Employee.Role role);
     
-    boolean existsByEmail(String email);
+    boolean existsByEmailIgnoreCase(String email);
 }

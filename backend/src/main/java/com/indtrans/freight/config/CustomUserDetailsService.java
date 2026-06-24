@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        Employee employee = employeeRepository.findByEmail(email)
+        Employee employee = employeeRepository.findByEmailIgnoreCase(email)
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + email));
         
         // ✅ Convert enum to String using .name()

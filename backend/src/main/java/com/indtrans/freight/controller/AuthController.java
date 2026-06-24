@@ -50,7 +50,7 @@ public class AuthController {
         if (user == null) {
             return ResponseEntity.status(401).body(Map.of("error", "Not authenticated"));
         }
-        Employee employee = employeeRepository.findByEmail(user.getUsername()).orElse(null);
+        Employee employee = employeeRepository.findByEmailIgnoreCase(user.getUsername()).orElse(null);
         if (employee == null) {
             return ResponseEntity.status(401).body(Map.of("error", "User not found"));
         }
