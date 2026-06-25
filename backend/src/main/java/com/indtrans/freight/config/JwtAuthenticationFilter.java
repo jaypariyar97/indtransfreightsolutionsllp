@@ -43,7 +43,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String authHeader = request.getHeader("Authorization");
         final String jwt;
         final String userEmail;
-        
+        log.info("========== JWT FILTER ==========");
+	log.info("URI = {}", request.getRequestURI());
+	log.info("AUTH HEADER PRESENT = {}", authHeader != null);
         // Skip if no Authorization header or doesn't start with "Bearer "
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
@@ -57,14 +59,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Extract username from token
             userEmail = jwtUtil.extractUsername(jwt);
             log.debug("Extracted username from token: {}", userEmail);
-            
+            log.info("TOKEN USER = {}", userEmail);
             // If username exists and no authentication in context yet
             if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 
                 // Load user details
                 log.debug("Loading user details for: {}", userEmail);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(userEmail);
-                
+                log.info("DB USER = {}", userDetails.getUsername());
+		log.info("AUTHORITIES = {}", userDetails.getAuthorities());
                 // Validate token
                 if (jwtUtil.validateToken(jwt, userDetails)) {
                     log.debug("Token validated successfully for: {}", userEmail);
@@ -95,8 +98,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // Token is invalid or expired - just continue without authentication
             log.debug("JWT references a user that does not exist in DB: {}", e.getMessage());
         }catch (Exception e) {
-            log.debug("JWT validation failed: {}", e.getMessage());
-        }
+   		 log.error("JWT FILTER ERROR", e);
+		}
         
         // Continue filter chain
         filterChain.doFilter(request, response);
