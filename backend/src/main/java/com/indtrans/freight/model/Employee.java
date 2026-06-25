@@ -34,7 +34,7 @@ public class Employee {
     @Column(name = "role", nullable = false, length = 20)
     private Role role;
     
-    @Lob
+   
     @Column(name = "permissions_json", columnDefinition = "TEXT")
     private String permissionsJson;
     
